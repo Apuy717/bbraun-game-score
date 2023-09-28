@@ -1,0 +1,18 @@
+{
+  "development": {
+    "url": "postgres://postgres:q1w2e3r4@localhost:5432/bbraun",
+    "dialect": "postgres",
+    "dialectOptions": {
+      "useUTC": false
+    },
+    "timezone": "+07:00"
+  },
+  "test": {
+    "url": "postgres://postgres:q1w2e3r4@localhost:5432/bbraun",
+    "dialect": "postgres"
+  },
+  "production": {
+    "url": "postgres://apuystereo:apuystereo@localhost:5432/bbraun",
+    "dialect": "postgres"
+  }
+}
