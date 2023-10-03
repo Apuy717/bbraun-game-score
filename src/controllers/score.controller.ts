@@ -1,14 +1,13 @@
-import { Request, Response } from "express";
-import Controller from "../utils/decorators/controller.decorator";
-import { Get, Post } from "../utils/decorators/handler.decorator";
 import { plainToClass } from "class-transformer";
-import { ScoreCreateOrUpdateDto } from "../models/score.create.or.update";
 import { validate } from "class-validator";
+import { Request, Response } from "express";
+import { Op, Transaction } from "sequelize";
+import sequelize from "../config/sequelize";
+import { ScoreCreateOrUpdateDto } from "../models/score.create.or.update";
 import Scores from "../models/scores.model";
 import Users from "../models/users";
-import sequelize from "../config/sequelize";
-import { Op, Transaction } from "sequelize";
-import moment from "moment-timezone";
+import Controller from "../utils/decorators/controller.decorator";
+import { Get, Post } from "../utils/decorators/handler.decorator";
 
 @Controller("/scores")
 export class ScoreController {
