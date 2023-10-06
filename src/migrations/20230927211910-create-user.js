@@ -12,13 +12,13 @@ module.exports = {
       fullname: {
         type: Sequelize.STRING,
       },
-      email: {
-        type: Sequelize.STRING,
-      },
-      dial_code: {
-        type: Sequelize.STRING,
-      },
       phone_number: {
+        type: Sequelize.STRING,
+      },
+      agency: {
+        type: Sequelize.STRING,
+      },
+      role: {
         type: Sequelize.STRING,
       },
       created_at: {

@@ -8,6 +8,7 @@ import Scores from "../models/scores.model";
 import Users from "../models/users";
 import Controller from "../utils/decorators/controller.decorator";
 import { Get, Post } from "../utils/decorators/handler.decorator";
+import fetch from "node-fetch";
 
 @Controller("/scores")
 export class ScoreController {
@@ -21,15 +22,44 @@ export class ScoreController {
   public async GotScores(req: Request, res: Response): Promise<Response> {
     try {
       const data = await this.scores.findAll({
-        include: [{ model: Users, as: "player", attributes: ["fullname", "dial_code", "phone_number", "email"] }],
+        include: [{ model: Users, as: "player", attributes: ["fullname", "phone_number", "agency", "role"] }],
         order: [["score", "DESC"]],
+        limit: 200,
       });
 
       return res.status(200).send({ statusCode: 200, msg: "OK", data: data });
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      if (err.statusCode) return res.status(err.statusCode).send({ statusCode: err.statusCode, msg: err.err });
+      return res.status(500).send({ statusCode: res.statusCode, msg: "Something went wrong!" });
+    }
+  }
 
-      return res.status(500).send({ statusCode: 500, msg: "Something went wrong!" });
+  /**
+   * CreateWithIntegration
+   */
+  @Post("/create-or-update-with-integration")
+  public async CreateWithIntegration(req: Request, res: Response): Promise<Response> {
+    const t = await sequelize.transaction();
+    try {
+      if (req.body.session !== `${process.env.HASH}`) throw { statusCode: 403, err: "request forbiden!" };
+      const _gotUser = await this.GotUserFromGuestBook(req.body.phone_number);
+      Object.assign(_gotUser, { ..._gotUser, score: req.body.score });
+      const errors = await validate(_gotUser);
+      if (errors.length > 0) return res.status(422).send({ statusCode: res.statusCode, msg: "!OK", err: errors });
+
+      const _User = await this.CreateOrUpdateUser(_gotUser, t);
+      const _Score = await this.CreateOrUpdateScore(_User.id, _gotUser.score, t);
+      const data = {
+        user: _User,
+        score: _Score,
+      };
+
+      t.commit();
+      return res.status(200).send({ statusCode: 200, msg: "OK", data: data });
+    } catch (err) {
+      t.rollback();
+      if (err.statusCode) return res.status(err.statusCode).send({ statusCode: err.statusCode, msg: err.err });
+      return res.status(500).send({ statusCode: res.statusCode, msg: "Something went wrong!" });
     }
   }
 
@@ -43,38 +73,80 @@ export class ScoreController {
     if (errors.length > 0) return res.status(422).send({ statusCode: res.statusCode, msg: "!OK", err: errors });
     const t = await sequelize.transaction();
     try {
+      if (req.body.session !== `${process.env.HASH}`) throw { statusCode: 403, err: "request forbiden!" };
       //check user already or now
       const _User = await this.CreateOrUpdateUser(payload, t);
-      const _Score = await this.CreateOrUpdateScore(_User.id, payload.scores, t);
+      const _Score = await this.CreateOrUpdateScore(_User.id, payload.score, t);
       const data = {
         user: _User,
         score: _Score,
       };
       t.commit();
       return res.status(200).send({ statusCode: 200, msg: "OK", data: data });
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
       t.rollback();
-      return res.status(500).send({ statusCode: 500, msg: "Something went wrong!" });
+      if (err.statusCode) return res.status(err.statusCode).send({ statusCode: err.statusCode, msg: err.err });
+      return res.status(500).send({ statusCode: res.statusCode, msg: "Something went wrong!" });
     }
+  }
+
+  private async GotUserFromGuestBook(phone_number: string) {
+    return await fetch(`https://api.bbraun.unibase.id/api/user/${phone_number}`, { method: "GET" })
+      .then((res) => res.json())
+      .then((r) => {
+        const response = r;
+        const k = Object.keys(response);
+
+        if (k.length >= 1 && k.find((f) => f === "no_telepon")) {
+          const _user: ScoreCreateOrUpdateDto = {
+            fullname: response.nama,
+            phone_number: response.no_telepon,
+            agency: response.instansi,
+            role: response.bagian,
+            score: 0,
+          };
+          return _user;
+        }
+
+        throw { statusCode: 404, err: "user not found!" };
+
+        // if (r?.statusCode === 200) {
+        //   const response = r;
+        //   const _user: ScoreCreateOrUpdateDto = {
+        //     fullname: response.nama,
+        //     phone_number: response.no_telepon,
+        //     agency: response.instansi,
+        //     role: response.bagian,
+        //     scores: 0,
+        //   };
+        //   return _user;
+        // }
+        // if (r.statusCode === 404) throw { statusCode: 404, err: "user not found!" };
+        // throw { statusCode: 500, err: "something went wrong!" };
+      })
+      .catch((err) => {
+        if (err.statusCode) throw { statusCode: err.statusCode, err: err.err };
+        throw { statusCode: 500, err: "something went wrong!" };
+      });
   }
 
   private async CreateOrUpdateUser(payload: ScoreCreateOrUpdateDto, t: Transaction): Promise<Users> {
     try {
       const _findOneUser = await this.users.findOne({
         where: {
-          [Op.or]: [{ email: payload.email }, { phone_number: payload.phone_number }],
+          [Op.or]: [{ phone_number: payload.phone_number }],
         },
         transaction: t,
       });
+
       //update user
       if (_findOneUser !== null) {
         await this.users.update(
           {
             fullname: payload.fullname,
-            dial_code: payload.dial_code,
             phone_number: payload.phone_number,
-            email: payload.email,
+            agency: payload.agency,
+            role: payload.role,
           },
           { where: { id: _findOneUser.id }, transaction: t }
         );
@@ -87,16 +159,15 @@ export class ScoreController {
       const _newUser = await this.users.create(
         {
           fullname: payload.fullname,
-          dial_code: payload.dial_code,
           phone_number: payload.phone_number,
-          email: payload.email,
+          agency: payload.agency,
+          role: payload.role,
         },
         { transaction: t }
       );
 
       return _newUser;
     } catch (error) {
-      console.log("create user error : ", error);
       throw { statusCode: 500, err: "something went wrong!" };
     }
   }
@@ -119,7 +190,6 @@ export class ScoreController {
       const _newScore = await this.scores.create({ user_id: user_id, score: score }, { transaction: t });
       return _newScore;
     } catch (error) {
-      console.log("create score error : ", error);
       throw { statusCode: 500, err: "something went wrong!" };
     }
   }

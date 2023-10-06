@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsEmail, Length, IsString, IsNumber } from "class-validator";
+import { IsNotEmpty, IsNumber, IsString, Length } from "class-validator";
 
 export class ScoreCreateOrUpdateDto {
   @IsNotEmpty()
@@ -7,17 +7,17 @@ export class ScoreCreateOrUpdateDto {
 
   @IsNotEmpty()
   @IsString()
-  public dial_code: string;
-
-  @IsNotEmpty()
-  @IsString()
   public phone_number: string;
 
   @IsNotEmpty()
-  @IsEmail()
-  public email: string;
+  @IsString()
+  public agency: string;
+
+  @IsNotEmpty()
+  @IsString()
+  public role: string;
 
   @IsNotEmpty()
   @IsNumber()
-  public scores: number;
+  public score: number;
 }

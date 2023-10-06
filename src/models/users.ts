@@ -4,9 +4,9 @@ import sequelize from "../config/sequelize";
 class Users extends Model<InferAttributes<Users>, InferCreationAttributes<Users>> {
   declare id: string;
   declare fullname: string;
-  declare email: string;
-  declare dial_code: string;
   declare phone_number: string;
+  declare agency: string;
+  declare role: string;
   declare created_at: CreationOptional<Date>;
   declare updated_at: CreationOptional<Date>;
   static associate(models: any) {
@@ -18,9 +18,9 @@ Users.init(
   {
     id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, allowNull: false },
     fullname: { type: DataTypes.STRING, allowNull: false },
-    email: { type: DataTypes.STRING, allowNull: false },
-    dial_code: { type: DataTypes.STRING, allowNull: false },
     phone_number: { type: DataTypes.STRING, allowNull: false },
+    agency: { type: DataTypes.STRING, allowNull: false },
+    role: { type: DataTypes.STRING, allowNull: false },
     created_at: { type: DataTypes.DATE, allowNull: false },
     updated_at: { type: DataTypes.DATE, allowNull: false },
   },
