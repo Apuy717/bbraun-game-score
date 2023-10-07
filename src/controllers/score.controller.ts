@@ -20,11 +20,12 @@ export class ScoreController {
    */
   @Get("/")
   public async GotScores(req: Request, res: Response): Promise<Response> {
+    const { limit } = req.query;
     try {
       const data = await this.scores.findAll({
         include: [{ model: Users, as: "player", attributes: ["fullname", "phone_number", "agency", "role"] }],
         order: [["score", "DESC"]],
-        limit: 200,
+        limit: limit ? parseInt(`${limit}`) : 200,
       });
 
       return res.status(200).send({ statusCode: 200, msg: "OK", data: data });
@@ -94,10 +95,8 @@ export class ScoreController {
     return await fetch(`https://api.bbraun.unibase.id/api/user/${phone_number}`, { method: "GET" })
       .then((res) => res.json())
       .then((r) => {
-        const response = r;
-        const k = Object.keys(response);
-
-        if (k.length >= 1 && k.find((f) => f === "no_telepon")) {
+        if (r?.statusCode === 200) {
+          const response = r.data;
           const _user: ScoreCreateOrUpdateDto = {
             fullname: response.nama,
             phone_number: response.no_telepon,
@@ -107,22 +106,8 @@ export class ScoreController {
           };
           return _user;
         }
-
-        throw { statusCode: 404, err: "user not found!" };
-
-        // if (r?.statusCode === 200) {
-        //   const response = r;
-        //   const _user: ScoreCreateOrUpdateDto = {
-        //     fullname: response.nama,
-        //     phone_number: response.no_telepon,
-        //     agency: response.instansi,
-        //     role: response.bagian,
-        //     scores: 0,
-        //   };
-        //   return _user;
-        // }
-        // if (r.statusCode === 404) throw { statusCode: 404, err: "user not found!" };
-        // throw { statusCode: 500, err: "something went wrong!" };
+        if (r.statusCode === 404) throw { statusCode: 404, err: "user not found!" };
+        throw { statusCode: 500, err: "something went wrong!" };
       })
       .catch((err) => {
         if (err.statusCode) throw { statusCode: err.statusCode, err: err.err };
