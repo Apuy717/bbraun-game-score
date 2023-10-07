@@ -50,11 +50,7 @@ export class ScoreController {
 
       const _User = await this.CreateOrUpdateUser(_gotUser, t);
       const _Score = await this.CreateOrUpdateScore(_User.id, _gotUser.score, t);
-      const data = {
-        user: _User,
-        score: _Score,
-      };
-
+      const data = this.SerializeResponseCreate(_User, _Score);
       t.commit();
       return res.status(200).send({ statusCode: 200, msg: "OK", data: data });
     } catch (err) {
@@ -78,10 +74,7 @@ export class ScoreController {
       //check user already or now
       const _User = await this.CreateOrUpdateUser(payload, t);
       const _Score = await this.CreateOrUpdateScore(_User.id, payload.score, t);
-      const data = {
-        user: _User,
-        score: _Score,
-      };
+      const data = this.SerializeResponseCreate(_User, _Score);
       t.commit();
       return res.status(200).send({ statusCode: 200, msg: "OK", data: data });
     } catch (err) {
@@ -91,6 +84,23 @@ export class ScoreController {
     }
   }
 
+  private SerializeResponseCreate(user: Users, score: Scores) {
+    const data = {
+      id: score.id,
+      user_id: score.user_id,
+      score: score.score,
+      created_at: score.created_at,
+      updated_at: score.updated_at,
+      player: {
+        fullname: user.fullname,
+        phone_number: user.phone_number,
+        agency: user.agency,
+        role: user.role,
+      },
+    };
+    return data;
+  }
+
   private async GotUserFromGuestBook(phone_number: string) {
     return await fetch(`https://api.bbraun.unibase.id/api/user/${phone_number}`, { method: "GET" })
       .then((res) => res.json())
@@ -98,10 +108,10 @@ export class ScoreController {
         if (r?.statusCode === 200) {
           const response = r.data;
           const _user: ScoreCreateOrUpdateDto = {
-            fullname: response.nama,
+            fullname: (response.nama as string).toLowerCase(),
             phone_number: response.no_telepon,
-            agency: response.instansi,
-            role: response.bagian,
+            agency: (response.instansi as string).toLowerCase(),
+            role: (response.bagian as string).toLowerCase(),
             score: 0,
           };
           return _user;
