@@ -1,18 +1,24 @@
 {
   "development": {
-    "url": "postgres://postgres:q1w2e3r4@localhost:5432/bbraun",
-    "dialect": "postgres",
-    "dialectOptions": {
-      "useUTC": false
-    },
-    "timezone": "+07:00"
+    "username": "root",
+    "password": "",
+    "database": "bbraun",
+    "host": "localhost",
+    "port": "3306",
+    "logging": true,
+    "dialect": "mysql"
   },
   "test": {
     "url": "postgres://postgres:q1w2e3r4@localhost:5432/bbraun",
     "dialect": "postgres"
   },
   "production": {
-    "url": "postgres://apuystereo:apuystereo@localhost:5432/bbraun",
-    "dialect": "postgres"
+    "username": "root",
+    "password": "",
+    "database": "bbraun",
+    "host": "localhost",
+    "port": "3306",
+    "logging": true,
+    "dialect": "mysql"
   }
 }

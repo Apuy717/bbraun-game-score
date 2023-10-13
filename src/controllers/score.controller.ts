@@ -30,7 +30,8 @@ export class ScoreController {
 
       return res.status(200).send({ statusCode: 200, msg: "OK", data: data });
     } catch (err) {
-      if (err.statusCode) return res.status(err.statusCode).send({ statusCode: err.statusCode, msg: err.err });
+      if (err.statusCode)
+        return res.status(err.statusCode).send({ statusCode: err.statusCode, msg: "!OK", err: err.err });
       return res.status(500).send({ statusCode: res.statusCode, msg: "Something went wrong!" });
     }
   }
@@ -55,7 +56,8 @@ export class ScoreController {
       return res.status(200).send({ statusCode: 200, msg: "OK", data: data });
     } catch (err) {
       t.rollback();
-      if (err.statusCode) return res.status(err.statusCode).send({ statusCode: err.statusCode, msg: err.err });
+      if (err.statusCode)
+        return res.status(err.statusCode).send({ statusCode: err.statusCode, msg: "!OK", err: err.err });
       return res.status(500).send({ statusCode: res.statusCode, msg: "Something went wrong!" });
     }
   }
@@ -79,7 +81,8 @@ export class ScoreController {
       return res.status(200).send({ statusCode: 200, msg: "OK", data: data });
     } catch (err) {
       t.rollback();
-      if (err.statusCode) return res.status(err.statusCode).send({ statusCode: err.statusCode, msg: err.err });
+      if (err.statusCode)
+        return res.status(err.statusCode).send({ statusCode: err.statusCode, msg: "!OK", err: err.err });
       return res.status(500).send({ statusCode: res.statusCode, msg: "Something went wrong!" });
     }
   }
@@ -106,6 +109,7 @@ export class ScoreController {
       .then((res) => res.json())
       .then((r) => {
         if (r?.statusCode === 200) {
+          if (r.data == null) throw { statusCode: 404, err: "user not found!" };
           const response = r.data;
           const _user: ScoreCreateOrUpdateDto = {
             fullname: (response.nama as string).toLowerCase(),
